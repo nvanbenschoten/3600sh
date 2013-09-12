@@ -1,13 +1,16 @@
 TARGET = 3600sh
 
-$(TARGET): $(TARGET).c
-	gcc -std=c99 -O0 -g -lm -Wall -pedantic -Werror -Wextra -o $@ $<
+BIN_DIR = bin/
+VPATH = src 
 
-all: $(TARGET)
+$(TARGET): $(TARGET).c
+	gcc -std=c99 -O0 -g -lm -Wall -pedantic -Werror -Wextra -o $(BIN_DIR)$@ $<
+
+all: $(BIN_DIR)$(TARGET)
 
 test: all
-	./test
+	$(BIN_DIR)test
 
 clean:
-	rm $(TARGET)
+	rm -f $(BIN_DIR)$(TARGET)
 
