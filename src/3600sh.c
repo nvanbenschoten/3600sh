@@ -20,22 +20,25 @@ int main(int argc, char*argv[]) {
   setvbuf(stdout, NULL, _IONBF, 0); 
   
   // Main loop that reads a command and executes it
-  while (1) {         
-    // You should issue the prompt here
-    do_prompt();  
-    // You should read in the command and execute it here
+	while (1) {         
+    // Issuing prompt
+    	char * input;
+	input = do_prompt();  
     
-    // You should probably remove this; right now, it
-    // just exits
-    do_exit();
+	if (!strcmp(input, "exit\n")) {
+		break;	
+	}
   }
+
+	
+    do_exit();
 
   return 0;
 }
 
 // Function which prompts the user for input
 //
-void do_prompt() {
+char *do_prompt() {
 	// Return code variable
 	int ret;
 
@@ -46,7 +49,7 @@ void do_prompt() {
 	// Checking for errors
 	if (user == NULL) {	
 		printf("Error 1\n");
-		return;
+		return NULL;
 	}
 
 	// Getting the hostname
@@ -57,7 +60,7 @@ void do_prompt() {
 	// Checking for errors
 	if (ret) {
 		printf("Error 2\n");
-		return;
+		return NULL;
 	}
 
 	// Getting the current working directory
@@ -65,7 +68,7 @@ void do_prompt() {
 	// Checking for errors
 	if (getcwd(dir, 100) != dir) {	
 		printf("Error 3\n");
-		return;
+		return NULL;
 	}
 	dir[99] = '\0'; 
 
@@ -101,7 +104,8 @@ void do_prompt() {
         // input will include \n char on end
 
         printf("%s", input);
-        free(input);
+       
+	return input;
 
 }
 

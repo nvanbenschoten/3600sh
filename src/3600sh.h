@@ -25,6 +25,6 @@
 #include <unistd.h>
 
 void do_exit();
-void do_prompt();
+char * do_prompt();
 
 #endif 
