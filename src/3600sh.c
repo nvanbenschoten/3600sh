@@ -22,7 +22,7 @@ int main(int argc, char*argv[]) {
   // Main loop that reads a command and executes it
   while (1) {         
     // You should issue the prompt here
-      
+    do_prompt();  
     // You should read in the command and execute it here
     
     // You should probably remove this; right now, it
@@ -33,9 +33,40 @@ int main(int argc, char*argv[]) {
   return 0;
 }
 
+// Function which prompts the user for input
+//
+void do_prompt() {
+	int ret;
+
+	char *user;	
+	user = getlogin();
+
+	if (user == NULL) {	
+		printf("Error 1\n");
+		return;
+	}
+
+	char host[100];
+	host[99] = '\0';
+	ret = gethostname(host, strlen(host) - 1);
+
+	if (ret) {
+		printf("Error 2\n");
+		return;
+	}
+
+	char *dir = (char *)malloc(100 * sizeof(char));
+	if (getcwd(dir, strlen(dir) - 1) != dir) {	
+		printf("Error 3\n");
+		return;
+	}
+
+	printf("%s@%s:%s> ", user, host, dir);
+}
+
 // Function which exits, printing the necessary message
 //
 void do_exit() {
-  printf("So long and thanks for all the fish!\n");
-  exit(0);
+	printf("So long and thanks for all the fish!\n");
+	exit(0);
 }

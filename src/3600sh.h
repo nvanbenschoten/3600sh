@@ -22,7 +22,9 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 void do_exit();
+void do_prompt();
 
 #endif 
