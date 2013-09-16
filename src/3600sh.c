@@ -36,33 +36,47 @@ int main(int argc, char*argv[]) {
 // Function which prompts the user for input
 //
 void do_prompt() {
+	// Return code variable
 	int ret;
 
-	char *user;	
+	// Getting the username
+	// Max length = 32 bytes
+	char *user;
 	user = getlogin();
-
+	// Checking for errors
 	if (user == NULL) {	
 		printf("Error 1\n");
 		return;
 	}
 
-	char host[100];
-	host[99] = '\0';
-	ret = gethostname(host, strlen(host) - 1);
-
+	// Getting the hostname
+	// Max length according to posix = 255 bytes
+	char *host = (char *)calloc(256, sizeof(char));
+	ret = gethostname(host, 256);
+	host[255] = '\0';
+	// Checking for errors
 	if (ret) {
 		printf("Error 2\n");
 		return;
 	}
 
-	char *dir = (char *)malloc(100 * sizeof(char));
-	if (getcwd(dir, strlen(dir) - 1) != dir) {	
+	// Getting the current working directory
+	char *dir = (char *)calloc(100, sizeof(char));
+	// Checking for errors
+	if (getcwd(dir, 100) != dir) {	
 		printf("Error 3\n");
 		return;
 	}
+	dir[99] = '\0'; 
 
+	// Printing prompt with variables given
 	printf("%s@%s:%s> ", user, host, dir);
-        // read in user input
+	
+	// Free calloced buffers
+	free(host);
+	free(dir);
+        
+	// read in user input
         int c;
         char * input = "";
         char * temp = "";
@@ -88,6 +102,7 @@ void do_prompt() {
 
         printf("%s", input);
         free(input);
+
 }
 
 // Function which exits, printing the necessary message
