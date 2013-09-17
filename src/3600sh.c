@@ -30,6 +30,7 @@ int main(int argc, char*argv[]) {
 		}
 		else {
 			if (!strcmp(input, "exit\n")) {
+				free(input);
 				break;	
 			}
 			free(input);
