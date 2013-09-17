@@ -13,21 +13,29 @@
 #define USE(x) (x) = (x)
 
 int main(int argc, char*argv[]) {
-  // Code which sets stdout to be unbuffered
-  // This is necessary for testing; do not change these lines
-  USE(argc);
-  USE(argv);
-  setvbuf(stdout, NULL, _IONBF, 0); 
+  	// Code which sets stdout to be unbuffered
+  	// This is necessary for testing; do not change these lines
+  	USE(argc);
+  	USE(argv);
+  	setvbuf(stdout, NULL, _IONBF, 0); 
   
-  // Main loop that reads a command and executes it
+  	// Main loop that reads a command and executes it
 	while (1) {         
-    // Issuing prompt
-    char * input;
-		input = do_prompt();  
+    	// Issuing prompt
+    	char *input = "";
+		int ret = do_prompt(&input);  
     
-		if (!strcmp(input, "exit\n")) {
-			break;	
+		if (ret) {
+			return 1;
 		}
+		else {
+			if (!strcmp(input, "exit\n")) {
+				break;	
+			}
+			free(input);
+		}
+
+		
   }
 
   // Exit function
@@ -38,7 +46,7 @@ int main(int argc, char*argv[]) {
 
 // Function which prompts the user for input
 //
-char *do_prompt() {
+int do_prompt(char **input) {
 	// Return code variable
 	int ret;
 
@@ -48,8 +56,7 @@ char *do_prompt() {
 	user = getlogin();
 	// Checking for errors
 	if (user == NULL) {	
-		printf("Error 1\n");
-		return NULL;
+		return 1;
 	}
 
 	// Getting the hostname
@@ -59,18 +66,17 @@ char *do_prompt() {
 	host[255] = '\0';
 	// Checking for errors
 	if (ret) {
-		printf("Error 2\n");
-		return NULL;
+		return 1;
 	}
 
 	// Getting the current working directory
-	char *dir = (char *)calloc(100, sizeof(char));
+	// Max length of path is 4096
+	char *dir = (char *)calloc(256, sizeof(char));
 	// Checking for errors
-	if (getcwd(dir, 100) != dir) {	
-		printf("Error 3\n");
-		return NULL;
+	if (getcwd(dir, 256) != dir) {	
+		return 1;
 	}
-	dir[99] = '\0'; 
+	dir[255] = '\0'; 
 
 	// Printing prompt with variables given
 	printf("%s@%s:%s> ", user, host, dir);
@@ -80,33 +86,31 @@ char *do_prompt() {
 	free(dir);
         
 	// read in user input
-  int c;
-  char * input = "";
-  char * temp = "";
-  do {
-    c = getc(stdin);
-    if (strlen(input) == 0) { // if this is the first char of input
-      input = (char *) calloc(2, sizeof(char)); // allocate space for input string
-      input[0] = (char) c; // write char and null terminator to input string
-      input[1] = '\0';
-    }
-    else { // otherwise we have previously allocated memory
-      temp = (char *) calloc(strlen(input) + 1, sizeof(char)); // move input to temp
-      strcpy(temp, input);
-      free(input);
-      input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
-      strcpy(input, temp); // copy back over input string
-      input[strlen(temp)] = c; // add newly read char
-      input[strlen(temp) + 1] = '\0'; // add null terminator
-      free(temp);
-    }
-  } while (c != '\n');
-  // input will include \n char on end
+  	int c;
+  	//input = "";
+  	char * temp = "";
+  	do {
+    	c = getc(stdin);
+    	if (strlen(*input) == 0) { // if this is the first char of input
+      		*input = (char *) calloc(2, sizeof(char)); // allocate space for input string
+      		(*input)[0] = (char) c; // write char and null terminator to input string
+      		(*input)[1] = '\0';
+    	} else { // otherwise we have previously allocated memory
+      		temp = (char *) calloc(strlen(*input) + 1, sizeof(char)); // move input to temp
+      		strcpy(temp, *input);
+      		free(*input);
+      		*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
+      		strcpy(*input, temp); // copy back over input string
+      		(*input)[strlen(temp)] = c; // add newly read char
+      		(*input)[strlen(temp) + 1] = '\0'; // add null terminator
+      		free(temp);
+    	}
+  	} while (c != '\n');
+  	// input will include \n char on end
 
-  printf("%s", input);
+	printf("%s", *input);
        
-	return input;
-
+	return 0;
 }
 
 // Function which exits, printing the necessary message

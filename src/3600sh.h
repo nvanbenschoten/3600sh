@@ -26,6 +26,6 @@
 #include <regex.h>
 
 void do_exit();
-char *do_prompt();
+int do_prompt(char **input);
 
 #endif 
