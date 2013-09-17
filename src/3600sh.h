@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <regex.h>
 
 void do_exit();
 char * do_prompt();
