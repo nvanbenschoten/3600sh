@@ -24,6 +24,13 @@ int main(int argc, char*argv[]) {
     	// Issuing prompt
     	char *input = "";
 		int ret = do_prompt(&input);  
+                //char ** args = {"ls", NULL};
+                char ** args;
+                args = (char **) calloc(2, sizeof(char *));
+                char * ls = "ls";
+                char * n = NULL;
+                args[0] = ls;
+                args[1] = n;
     
 		if (ret) {
 			return 1;
@@ -34,6 +41,9 @@ int main(int argc, char*argv[]) {
 				free(input);
 				break;	
 			}
+                        else if (!strcmp(input, "/bin/ls\n")) {
+                          do_exec("/bin/ls", args);
+                        }
 			free(input);
 		}
 
