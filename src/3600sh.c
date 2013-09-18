@@ -24,27 +24,36 @@ int main(int argc, char*argv[]) {
     	// Issuing prompt
     	char *input = "";
 		int ret = do_prompt(&input);  
-                //char ** args = {"ls", NULL};
-                char ** args;
-                args = (char **) calloc(2, sizeof(char *));
-                char * ls = "ls";
-                char * n = NULL;
-                args[0] = ls;
-                args[1] = n;
     
 		if (ret) {
 			return 1;
 		}
 		else {
-			do_parse(input);
-			if (!strcmp(input, "exit\n")) {
-				free(input);
+			char **args;
+
+            do_parse(input, &args);
+            free(input);
+
+			if (!strcmp(args[0], "exit")) {
+				int i;
+    			for (i = 0; args[i] != NULL; i++) {
+        			free(args[i]);
+    			}    
+    			free(args);
 				break;	
 			}
-                        else if (!strcmp(input, "/bin/ls\n")) {
-                          do_exec("/bin/ls", args);
-                        }
-			free(input);
+            else {
+                char * path = calloc(50, sizeof(char));
+                strcpy(path, "/bin/");
+                do_exec(path, args);
+
+                int i;
+                free(path);
+    			for (i = 0; args[i] != NULL; i++) {
+        			free(args[i]);
+    			}    
+    			free(args);
+            }
 		}
 
 		
@@ -127,19 +136,19 @@ int do_prompt(char **input) {
 
 // Function which parses the user input from a string to usable data
 //
-int do_parse(char *input) {
+int do_parse(char *input, char ***args) {
 	// Compiling regular expression
 	regex_t r;
-	char * regex_text = "[ \t]*[A-Za-z0-9_]+[ \t\n]+";
+	char * regex_text = "[ \t]*[-A-Za-z0-9_/]+[ \t\n]+";
 	int ret = regcomp (&r, regex_text, REG_EXTENDED|REG_NEWLINE);
 	if (ret) // Returns if error with regex compilation
 		return 1;
 
-	char **args = (char **) calloc(1, sizeof(char *));
-	if (args == NULL)
+	*args = (char **) calloc(1, sizeof(char *));
+	if (*args == NULL)
 		return 1;
 	int argc = 0;
-	args[0] = (char *) NULL;
+	(*args)[0] = (char *) NULL;
 
 	char * pointer = input;
 
@@ -177,17 +186,14 @@ int do_parse(char *input) {
 
 		char **tempArgs = (char **) calloc(argc - 1, sizeof(char*)); // move args to temp
       	for (i = 0; i < argc - 1; i++)
-      		tempArgs[i] = args[i];
-      	free(args);
-      	args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
+      		tempArgs[i] = (*args)[i];
+      	free(*args);
+      	*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
       	for (i = 0; i < argc - 1; i++)
-      		args[i] = tempArgs[i];
-      	args[i] = matchString;
-      	args[i+1] = (char *) NULL;
+      		*args[i] = tempArgs[i];
+      	(*args)[i] = matchString;
+      	(*args)[i+1] = (char *) NULL;
       	free(tempArgs);
-
-		// DEBUG
-		//printf("%s\n", matchString);
 
 	}
 
@@ -198,26 +204,28 @@ int do_parse(char *input) {
 // Function which calls exec
 //
 int do_exec(char *path, char **argl) {
-  //int cur_pid = getpid(); // get current pid
-  //int parent_pid = getppid();
-  int child_pid;
+    //int cur_pid = getpid(); // get current pid
+    //int parent_pid = getppid();
+    int child_pid;
 
-  // fork child process
-  if ((child_pid = fork()) < 0) { // if child process fails to fork
-    perror("Error: fork() Failure\n");
-    return 1;
-  }
-  if (child_pid == 0) { // fork() == 0 for child process
-    //cur_pid = getpid();
-    //parent_pid = getppid();
-    execv(path, argl); // exec user program
-    perror("Error: execv() Failure\n"); // will not get to error if successful
-    return errno;
-  }
-  else { // parent process
-    wait(NULL); // wait for child process to exit
-  }
-  return 0;
+    // fork child process
+    if ((child_pid = fork()) < 0) { // if child process fails to fork
+        perror("Error: fork() Failure\n");
+        return 1;
+    }
+    if (child_pid == 0) { // fork() == 0 for child process
+        //cur_pid = getpid();
+        //parent_pid = getppid();
+        strcat(path, argl[0]);
+        execv(path, argl); // exec user program
+        perror("Error: execv() Failure\n"); // will not get to error if successful
+        return errno;
+    }
+    else { // parent process
+        wait(NULL); // wait for child process to exit
+    }
+
+    return 0;
 }
 
 // Function which exits, printing the necessary message
