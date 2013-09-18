@@ -190,7 +190,7 @@ int do_parse(char *input, char ***args) {
       	free(*args);
       	*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
       	for (i = 0; i < argc - 1; i++)
-      		*args[i] = tempArgs[i];
+      		(*args)[i] = tempArgs[i];
       	(*args)[i] = matchString;
       	(*args)[i+1] = (char *) NULL;
       	free(tempArgs);
@@ -232,5 +232,6 @@ int do_exec(char *path, char **argl) {
 //
 void do_exit() {
 	printf("So long and thanks for all the fish!\n");
+    // Might need to kill processes
 	exit(0);
 }
