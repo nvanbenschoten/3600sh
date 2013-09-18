@@ -114,6 +114,29 @@ int do_prompt(char **input) {
 	return 0;
 }
 
+int do_exec(char *path, char **argl) {
+  //int cur_pid = getpid(); // get current pid
+  //int parent_pid = getppid();
+  int child_pid;
+
+  // fork child process
+  if ((child_pid = fork()) < 0) { // if child process fails to fork
+    perror("Error: fork() Failure\n");
+    return 1;
+  }
+  if (child_pid == 0) { // fork() == 0 for child process
+    //cur_pid = getpid();
+    //parent_pid = getppid();
+    execv(path, argl); // exec user program
+    perror("Error: execv() Failure\n"); // will not get to error if successful
+    return errno;
+  }
+  else { // parent process
+    wait(NULL); // wait for child process to exit
+  }
+  return 0;
+}
+
 // Function which exits, printing the necessary message
 //
 void do_exit() {
