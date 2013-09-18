@@ -147,7 +147,6 @@ int do_parse(char *input) {
 		regmatch_t match[1];
 		int noMatchFound = regexec(&r, pointer, 1, match, 0);
 		if (noMatchFound) {
-			printf("End\n");
 			break;
 		}
 
@@ -187,7 +186,8 @@ int do_parse(char *input) {
       	args[i+1] = (char *) NULL;
       	free(tempArgs);
 
-		printf("%s\n", matchString);
+		// DEBUG
+		//printf("%s\n", matchString);
 
 	}
 
