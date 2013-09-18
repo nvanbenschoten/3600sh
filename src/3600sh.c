@@ -146,7 +146,7 @@ int do_prompt(char **input) {
 int do_parse_input(char *input, char ***args, int *background) {
 	// Compiling regular expression
 	regex_t r;
-	char * regex_text = "[ \t]*[-A-Za-z0-7_&/\\]+[ \t\n]+"; // 
+	char * regex_text = "[ \t]*[^ \t\n]+[ \t\n]+"; //[-A-Za-z0-7_&/\\]
 	int ret = regcomp (&r, regex_text, REG_EXTENDED|REG_NEWLINE);
 	if (ret) // Returns if error with regex compilation
 		return 1;
