@@ -13,56 +13,56 @@
 #define USE(x) (x) = (x)
 
 int main(int argc, char*argv[]) {
-  	// Code which sets stdout to be unbuffered
-  	// This is necessary for testing; do not change these lines
-  	USE(argc);
-  	USE(argv);
-  	setvbuf(stdout, NULL, _IONBF, 0); 
+	// Code which sets stdout to be unbuffered
+	// This is necessary for testing; do not change these lines
+	USE(argc);
+	USE(argv);
+	setvbuf(stdout, NULL, _IONBF, 0); 
   
-  	// Main loop that reads a command and executes it
+	// Main loop that reads a command and executes it
 	while (1) {         
-    	// Issuing prompt
-    	char *input = "";
+		// Issuing prompt
+		char *input = "";
 		int ret = do_prompt(&input);  
-    
+	
 		if (ret) {
 			return 1;
 		}
 		else {
 			char **args;
 
-            int backgroundProc = 0;
+			int backgroundProc = 0;
 
-            ret = do_parse_input(input, &args, &backgroundProc);
-            if (ret == 1) {
-                printf("%s\n", "ERROR");
-            } else if (ret == 2) {
-                printf("%s\n", "Error: Unrecognized escape sequence.");
-            }
-            free(input);
+			ret = do_parse_input(input, &args, &backgroundProc);
+			if (ret == 1) {
+				printf("%s\n", "ERROR");
+			} else if (ret == 2) {
+				printf("%s\n", "Error: Unrecognized escape sequence.");
+			}
+			free(input);
 
-            // If no args, continue loop
-            if (args[0] == NULL) {
-                free_args(args);
-                continue;
-            }
-            
-            printf("%s %d\n", "Background proc:", backgroundProc);
-            debug_print_args(args);
+			// If no args, continue loop
+			if (args[0] == NULL) {
+				free_args(args);
+				continue;
+			}
+			
+			printf("%s %d\n", "Background proc:", backgroundProc);
+			debug_print_args(args);
 
 			if (!strcmp(args[0], "exit")) {
-                // Need to also support EOF
-                // Handle \n EOF
+				// Need to also support EOF
+				// Handle \n EOF
 				free_args(args);
 				break;	
 			} else {
-                char * path = calloc(50, sizeof(char));
-                strcpy(path, "");
-                do_exec(path, args);
-                
-                free(path);
-    			free_args(args);
-            }
+				char * path = calloc(50, sizeof(char));
+				strcpy(path, "");
+				do_exec(path, args);
+				
+				free(path);
+				free_args(args);
+			}
 		}
 
 		
@@ -114,30 +114,30 @@ int do_prompt(char **input) {
 	// Free calloced buffers
 	free(host);
 	free(dir);
-        
+		
 	// read in user input
-  	int c;
-  	char * temp = "";
-  	do {
-    	c = getc(stdin);
-    	if (strlen(*input) == 0) { // if this is the first char of input
-      		*input = (char *) calloc(2, sizeof(char)); // allocate space for input string
-      		(*input)[0] = (char) c; // write char and null terminator to input string
-      		(*input)[1] = '\0';
-    	} else { // otherwise we have previously allocated memory
-      		temp = *input;
-      		*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
-      		strcpy(*input, temp); // copy back over input string
-      		(*input)[strlen(temp)] = c; // add newly read char
-      		(*input)[strlen(temp) + 1] = '\0'; // add null terminator
-      		free(temp);
-    	}
-  	} while (c != '\n');
-  	// input will include \n char on end
+	int c;
+	char * temp = "";
+	do {
+		c = getc(stdin);
+		if (strlen(*input) == 0) { // if this is the first char of input
+			*input = (char *) calloc(2, sizeof(char)); // allocate space for input string
+			(*input)[0] = (char) c; // write char and null terminator to input string
+			(*input)[1] = '\0';
+		} else { // otherwise we have previously allocated memory
+			temp = *input;
+			*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
+			strcpy(*input, temp); // copy back over input string
+			(*input)[strlen(temp)] = c; // add newly read char
+			(*input)[strlen(temp) + 1] = '\0'; // add null terminator
+			free(temp);
+		}
+	} while (c != '\n');
+	// input will include \n char on end
 
-  	// DEBUG
+	// DEBUG
 	//printf("%s", *input);
-       
+	   
 	return 0;
 }
 
@@ -151,137 +151,137 @@ int do_parse_input(char *input, char ***args, int *background) {
 	if (ret) // Returns if error with regex compilation
 		return 1;
 
-    // Creating args string pointer array
+	// Creating args string pointer array
 	*args = (char **) calloc(1, sizeof(char *));
 	if (*args == NULL)
 		return 1;
-    // Creates arg count
+	// Creates arg count
 	int argc = 0;
-    // Last argument is null pointer
+	// Last argument is null pointer
 	(*args)[0] = (char *) NULL;
-    // Setting background to no
-    *background = 0;
+	// Setting background to no
+	*background = 0;
 
-    // Cursor pointer
+	// Cursor pointer
 	char * pointer = input;
-    int i = 0;
-    int combineWithPrev = 0;
+	int i = 0;
+	int combineWithPrev = 0;
 
 	while (1) {
 		regmatch_t match[1];
-        // Searching for match with regex
+		// Searching for match with regex
 		int noMatchFound = regexec(&r, pointer, 1, match, 0);
 		if (noMatchFound) {
-            // If no match is found, break loop
+			// If no match is found, break loop
 			break;
 		}
 
-        // If here, match was found so increment match
+		// If here, match was found so increment match
 		argc++;
 		char * temp = "";
 		char * matchString = "";
-        int combine = combineWithPrev;
-        combineWithPrev = 0;
+		int combine = combineWithPrev;
+		combineWithPrev = 0;
 
 		for (i = 0; match[0].rm_so + i < match[0].rm_eo; i++) {
 			int length = 0;
-            if (strlen(matchString) == 0) { // if this is the first char of match
-      			matchString = (char *) calloc(2, sizeof(char)); // allocate space for input string
-    		} else { 
-                // otherwise we have previously allocated memory
-      			temp = matchString;
-      			matchString = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
-      			strcpy(matchString, temp); // copy back over input string
-                length = strlen(temp);
-                free(temp);
-            }
+			if (strlen(matchString) == 0) { // if this is the first char of match
+				matchString = (char *) calloc(2, sizeof(char)); // allocate space for input string
+			} else { 
+				// otherwise we have previously allocated memory
+				temp = matchString;
+				matchString = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
+				strcpy(matchString, temp); // copy back over input string
+				length = strlen(temp);
+				free(temp);
+			}
 
-            switch (*(pointer + match[0].rm_so + i)) {
-                case '\n':
-                    matchString[length] = '\0';
-                    break;
-                case '\\':
-                    // Deal with escape characters
-                    *background = 0;
-                    i++;
-                    if (!(match[0].rm_so + i < match[0].rm_eo)) {
-                        // End of line, get the hell out of there
-                        return 2;
-                    } else {
-                        switch (*(pointer + match[0].rm_so + i)) {
-                            // Next char is available
-                            case '\\':
-                                matchString[length] = '\\';
-                                break;
-                            case ' ':
-                                matchString[length] = ' ';
-                                combineWithPrev = 1;
-                                break;
-                            case 't':
-                                matchString[length] = '\t';
-                                break;
-                            case '&':
-                                matchString[length] = '&';
-                                break;
-                            default:
-                                return 2;
-                        }
-                    } 
-                    break;
-                case '&':
-                    matchString[length] = '&';
-                    *background = 1;
-                    break;
-                default:
-                    *background = 0;
-                    matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
-                    break;
-            }
-  				
-  			matchString[length + 1] = '\0'; // add null terminator
-    		
+			switch (*(pointer + match[0].rm_so + i)) {
+				case '\n':
+					matchString[length] = '\0';
+					break;
+				case '\\':
+					// Deal with escape characters
+					*background = 0;
+					i++;
+					if (!(match[0].rm_so + i < match[0].rm_eo)) {
+						// End of line, get the hell out of there
+						return 2;
+					} else {
+						switch (*(pointer + match[0].rm_so + i)) {
+							// Next char is available
+							case '\\':
+								matchString[length] = '\\';
+								break;
+							case ' ':
+								matchString[length] = ' ';
+								combineWithPrev = 1;
+								break;
+							case 't':
+								matchString[length] = '\t';
+								break;
+							case '&':
+								matchString[length] = '&';
+								break;
+							default:
+								return 2;
+						}
+					} 
+					break;
+				case '&':
+					matchString[length] = '&';
+					*background = 1;
+					break;
+				default:
+					*background = 0;
+					matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
+					break;
+			}
+				
+			matchString[length + 1] = '\0'; // add null terminator
+			
 		}
-        // Increments pointer to end of matched string + 1
+		// Increments pointer to end of matched string + 1
 		pointer += match[0].rm_eo;
 
-        // Adds string to string pointer array
+		// Adds string to string pointer array
 		if (!combine) {
-            char **tempArgs = *args;
-          	*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
-          	for (i = 0; i < argc - 1; i++)
-          		(*args)[i] = tempArgs[i];
-          	(*args)[i] = matchString;
-          	(*args)[i+1] = (char *) NULL;
-          	free(tempArgs);
-        } else {
-            char *tempPointer = (*args)[argc-2];
-            (*args)[argc-2] = (char *)calloc(strlen((*args)[argc-2]) + sizeof(matchString) + 1, sizeof(char));
-            strcpy((*args)[argc-2], tempPointer);
-            free(tempPointer);
-            strcat((*args)[argc-2], matchString);
-            argc--;
-        }
+			char **tempArgs = *args;
+			*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
+			for (i = 0; i < argc - 1; i++)
+				(*args)[i] = tempArgs[i];
+			(*args)[i] = matchString;
+			(*args)[i+1] = (char *) NULL;
+			free(tempArgs);
+		} else {
+			char *tempPointer = (*args)[argc-2];
+			(*args)[argc-2] = (char *)calloc(strlen((*args)[argc-2]) + sizeof(matchString) + 1, sizeof(char));
+			strcpy((*args)[argc-2], tempPointer);
+			free(tempPointer);
+			strcat((*args)[argc-2], matchString);
+			argc--;
+		}
 
 	}
 
 	regfree(&r);
 
-    // Fix & at end
-    if (*background) {
-        if (strlen((*args)[argc-1]) == 1) {
-            // Delete term
-            argc--;
-            char **tempAmp = *args;
-            *args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
-            int j = 0;
-            for (j = 0; j < argc; j++)
-                (*args)[j] = tempAmp[j];
-            (*args)[j] = (char *) NULL;
-        } else {
-            // Delete last byte
-            (*args)[argc-1][strlen((*args)[argc-1])-1] = '\0';
-        }
-    }
+	// Fix & at end
+	if (*background) {
+		if (strlen((*args)[argc-1]) == 1) {
+			// Delete term
+			argc--;
+			char **tempAmp = *args;
+			*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
+			int j = 0;
+			for (j = 0; j < argc; j++)
+				(*args)[j] = tempAmp[j];
+			(*args)[j] = (char *) NULL;
+		} else {
+			// Delete last byte
+			(*args)[argc-1][strlen((*args)[argc-1])-1] = '\0';
+		}
+	}
 
 	return 0;
 }
@@ -290,28 +290,28 @@ int do_parse_input(char *input, char ***args, int *background) {
 // Function which calls exec
 //
 int do_exec(char *path, char **argl) {
-    //int cur_pid = getpid(); // get current pid
-    //int parent_pid = getppid();
-    int child_pid;
+	//int cur_pid = getpid(); // get current pid
+	//int parent_pid = getppid();
+	int child_pid;
 
-    // fork child process
-    if ((child_pid = fork()) < 0) { // if child process fails to fork
-        perror("Error: fork() Failure\n");
-        return 1;
-    }
-    if (child_pid == 0) { // fork() == 0 for child process
-        //cur_pid = getpid();
-        //parent_pid = getppid();
-        strcat(path, argl[0]);
-        execvp(path, argl); // exec user program
-        perror("Error: execv() Failure\n"); // will not get to error if successful
-        return errno;
-    }
-    else { // parent process
-        wait(NULL); // wait for child process to exit
-    }
+	// fork child process
+	if ((child_pid = fork()) < 0) { // if child process fails to fork
+		perror("Error: fork() Failure\n");
+		return 1;
+	}
+	if (child_pid == 0) { // fork() == 0 for child process
+		//cur_pid = getpid();
+		//parent_pid = getppid();
+		strcat(path, argl[0]);
+		execvp(path, argl); // exec user program
+		perror("Error: execv() Failure\n"); // will not get to error if successful
+		return errno;
+	}
+	else { // parent process
+		wait(NULL); // wait for child process to exit
+	}
 
-    return 0;
+	return 0;
 }
 
 // Function which exits, printing the necessary message
@@ -324,17 +324,17 @@ void do_exit() {
 // Frees argument string pointer array
 //
 void free_args(char **args) {
-    int i;
-    for (i = 0; args[i] != NULL; i++) {
-        free(args[i]);
-    }    
-    free(args);
+	int i;
+	for (i = 0; args[i] != NULL; i++) {
+		free(args[i]);
+	}    
+	free(args);
 }
 
 void debug_print_args(char **args) {
-    int i = 0;
-    printf("%s\n", "Printing Args");
-    for (i = 0; args[i] != NULL; i++) {
-        printf("\t%s\n", args[i]);
-    }
+	int i = 0;
+	printf("%s\n", "Printing Args");
+	for (i = 0; args[i] != NULL; i++) {
+		printf("\t%s\n", args[i]);
+	}
 }
