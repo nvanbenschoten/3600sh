@@ -27,6 +27,7 @@
 
 void do_exit();
 int do_prompt(char **input);
+int do_parse(char *input);
 int do_exec(char *path, char **argl);
 
 #endif 
