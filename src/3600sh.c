@@ -316,13 +316,13 @@ int do_exec(char **argl, int background) {
 		execvp(*argl, argl); // exec user program
 		perror("Error: execv() Failure\n"); // will not get to error if successful
 		//kill((pid_t)cur_pid, SIGQUIT);
-                exit(errno);
-                //return errno;
+		exit(errno);
+		//return errno;
 	}
 	else { // parent process
-          if (!background) {
-		wait(NULL); // wait for child process to exit
-          }
+		if (!background) {
+			wait(NULL); // wait for child process to exit
+		}
 	}
 
 	return 0;
