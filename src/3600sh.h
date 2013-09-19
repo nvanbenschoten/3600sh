@@ -28,7 +28,7 @@
 void do_exit();
 int do_prompt(char **input);
 int do_parse_input(char *input, char ***args, int *background);
-int do_exec(char *path, char **argl);
+int do_exec(char **argl, int background);
 
 void free_args(char **args);
 
