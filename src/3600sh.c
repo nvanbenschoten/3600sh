@@ -38,6 +38,8 @@ int main(int argc, char*argv[]) {
 				printf("%s\n", "ERROR");
 			} else if (ret == 2) {
 				printf("%s\n", "Error: Unrecognized escape sequence.");
+			} else if (ret == 3) {
+				printf("%s\n", "Error: Invalid syntax.");
 			}
 			free(input);
 
@@ -47,8 +49,8 @@ int main(int argc, char*argv[]) {
 				continue;
 			}
 			
-			printf("%s %d\n", "Background proc:", backgroundProc);
-			debug_print_args(args);
+			//printf("%s %d\n", "Background proc:", backgroundProc);
+			//debug_print_args(args);
 
 			if (!strcmp(args[0], "exit")) {
 				// Need to also support EOF
@@ -142,7 +144,11 @@ int do_prompt(char **input) {
 }
 
 // Function which parses the user input from a string to usable data
-//
+// Return Codes:
+//	0 - Good
+// 	1 - Generic Error
+//	2 - Escape Sequence Error 
+// 	3 - & Syntax Error
 int do_parse_input(char *input, char ***args, int *background) {
 	// Compiling regular expression
 	regex_t r;
@@ -184,6 +190,9 @@ int do_parse_input(char *input, char ***args, int *background) {
 		combineWithPrev = 0;
 
 		for (i = 0; match[0].rm_so + i < match[0].rm_eo; i++) {
+			if (*background)
+				return 3;
+
 			int length = 0;
 			if (strlen(matchString) == 0) { // if this is the first char of match
 				matchString = (char *) calloc(2, sizeof(char)); // allocate space for input string
@@ -202,7 +211,6 @@ int do_parse_input(char *input, char ***args, int *background) {
 					break;
 				case '\\':
 					// Deal with escape characters
-					*background = 0;
 					i++;
 					if (!(match[0].rm_so + i < match[0].rm_eo)) {
 						// End of line, get the hell out of there
@@ -233,7 +241,6 @@ int do_parse_input(char *input, char ***args, int *background) {
 					*background = 1;
 					break;
 				default:
-					*background = 0;
 					matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
 					break;
 			}
