@@ -241,11 +241,18 @@ int do_parse_input(char *input, char ***args, int *background) {
 			matchString[length + 1] = '\0'; // add null terminator
 			
 		}
-		// Increments pointer to end of matched string + 1
-		pointer += match[0].rm_eo;
+
+
 
 		// Adds string to string pointer array
-		if (!combine) {
+		if (combine && *(pointer-2) == '\\') {
+			char *tempPointer = (*args)[argc-2];
+			(*args)[argc-2] = (char *)calloc(strlen((*args)[argc-2]) + sizeof(matchString) + 1, sizeof(char));
+			strcpy((*args)[argc-2], tempPointer);
+			free(tempPointer);
+			strcat((*args)[argc-2], matchString);
+			argc--;
+		} else {
 			char **tempArgs = *args;
 			*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
 			for (i = 0; i < argc - 1; i++)
@@ -253,14 +260,10 @@ int do_parse_input(char *input, char ***args, int *background) {
 			(*args)[i] = matchString;
 			(*args)[i+1] = (char *) NULL;
 			free(tempArgs);
-		} else {
-			char *tempPointer = (*args)[argc-2];
-			(*args)[argc-2] = (char *)calloc(strlen((*args)[argc-2]) + sizeof(matchString) + 1, sizeof(char));
-			strcpy((*args)[argc-2], tempPointer);
-			free(tempPointer);
-			strcat((*args)[argc-2], matchString);
-			argc--;
 		}
+
+		// Increments pointer to end of matched string + 1
+		pointer += match[0].rm_eo;
 
 	}
 
