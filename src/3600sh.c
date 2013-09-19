@@ -56,11 +56,11 @@ int main(int argc, char*argv[]) {
 				free_args(args);
 				break;	
 			} else {
-				char * path = calloc(50, sizeof(char));
-				strcpy(path, "");
-				do_exec(path, args);
+				//char * path = calloc(50, sizeof(char));
+				//strcpy(path, "");
+				do_exec(args, backgroundProc);
 				
-				free(path);
+				//free(path);
 				free_args(args);
 			}
 		}
@@ -289,8 +289,8 @@ int do_parse_input(char *input, char ***args, int *background) {
 
 // Function which calls exec
 //
-int do_exec(char *path, char **argl) {
-	//int cur_pid = getpid(); // get current pid
+int do_exec(char **argl, int background) {
+	int cur_pid = getpid(); // get current pid
 	//int parent_pid = getppid();
 	int child_pid;
 
@@ -300,15 +300,19 @@ int do_exec(char *path, char **argl) {
 		return 1;
 	}
 	if (child_pid == 0) { // fork() == 0 for child process
-		//cur_pid = getpid();
+		cur_pid = getpid();
 		//parent_pid = getppid();
-		strcat(path, argl[0]);
-		execvp(path, argl); // exec user program
+		//strcat(path, argl[0]);
+		execvp(*argl, argl); // exec user program
 		perror("Error: execv() Failure\n"); // will not get to error if successful
-		return errno;
+		//kill((pid_t)cur_pid, SIGQUIT);
+                exit(errno);
+                //return errno;
 	}
 	else { // parent process
+          if (!background) {
 		wait(NULL); // wait for child process to exit
+          }
 	}
 
 	return 0;
