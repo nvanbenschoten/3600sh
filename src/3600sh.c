@@ -48,9 +48,6 @@ int main(int argc, char*argv[]) {
 				free_args(args);
 				continue;
 			}
-			
-			//printf("%s %d\n", "Background proc:", backgroundProc);
-			//debug_print_args(args);
 
 			if (!strcmp(args[0], "exit")) {
 				// Need to also support EOF
@@ -240,6 +237,8 @@ int do_parse_input(char *input, char ***args, int *background) {
 					matchString[length] = '&';
 					*background = 1;
 					break;
+				case ' ':
+					break;
 				default:
 					matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
 					break;
@@ -299,7 +298,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 
 // Function which calls exec
 //
-int do_exec(char **argl, int background) {
+int do_exec(char **argl, int backgroundProc) {
 	int cur_pid = getpid(); // get current pid
 	//int parent_pid = getppid();
 	int child_pid;
@@ -313,6 +312,7 @@ int do_exec(char **argl, int background) {
 		cur_pid = getpid();
 		//parent_pid = getppid();
 		//strcat(path, argl[0]);
+		//debug_print_args(argl);
 		execvp(*argl, argl); // exec user program
 		perror("Error: execv() Failure\n"); // will not get to error if successful
 		//kill((pid_t)cur_pid, SIGQUIT);
@@ -320,7 +320,7 @@ int do_exec(char **argl, int background) {
 		//return errno;
 	}
 	else { // parent process
-		if (!background) {
+		if (!backgroundProc) {
 			wait(NULL); // wait for child process to exit
 		}
 	}
@@ -349,6 +349,7 @@ void debug_print_args(char **args) {
 	int i = 0;
 	printf("%s\n", "Printing Args");
 	for (i = 0; args[i] != NULL; i++) {
-		printf("\t%s\n", args[i]);
+		printf("\t%sEND\n", args[i]);
 	}
+	printf("\t%s\n", args[i]);
 }
