@@ -84,13 +84,7 @@ int do_prompt(char **input, int *eof) {
 	int ret;
 
 	// Getting the username
-	// Max length = 32 bytes
-	char *user;
-	user = getlogin();
-	// Checking for errors
-	if (user == NULL) {	
-		return 1;
-	}
+	printf("%s", getenv("USER"));
 
 	// Getting the hostname
 	// Max length according to posix = 255 bytes
@@ -112,7 +106,7 @@ int do_prompt(char **input, int *eof) {
 	dir[255] = '\0'; 
 
 	// Printing prompt with variables given
-	printf("%s@%s:%s> ", user, host, dir);
+	printf("@%s:%s> ", host, dir);
 	
 	// Free calloced buffers
 	free(host);
@@ -126,9 +120,13 @@ int do_prompt(char **input, int *eof) {
 		if (strlen(*input) == 0) { // if this is the first char of input
 			if (c == EOF) {
 				// If first
-				*eof = 1;
-				printf("\n");
-				return 2;
+				if (feof(stdin)) {
+					*eof = 1;
+					//printf("\n");
+					return 2;
+				} else {
+					return 1;
+				}
 			}
 			*input = (char *) calloc(2, sizeof(char)); // allocate space for input string
 			(*input)[0] = (char) c; // write char and null terminator to input string
@@ -136,15 +134,19 @@ int do_prompt(char **input, int *eof) {
 		} else { // otherwise we have previously allocated memory
 			if (c == EOF) {
 				// If not first
-				*eof = 1;
-				temp = *input;
-				*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
-				strcpy(*input, temp); // copy back over input string
-				(*input)[strlen(temp)] = '\n'; // add newly read char
-				(*input)[strlen(temp) + 1] = '\0'; // add null terminator
-				free(temp);
-				printf("\n");
-				break;
+				if (feof(stdin)) {
+					*eof = 1;
+					temp = *input;
+					*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
+					strcpy(*input, temp); // copy back over input string
+					(*input)[strlen(temp)] = '\n'; // add newly read char
+					(*input)[strlen(temp) + 1] = '\0'; // add null terminator
+					free(temp);
+					//printf("\n");
+					return 0;
+				} else {
+					return 1;
+				}
 			}
 			temp = *input;
 			*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
@@ -153,7 +155,7 @@ int do_prompt(char **input, int *eof) {
 			(*input)[strlen(temp) + 1] = '\0'; // add null terminator
 			free(temp);
 		}
-	} while (c != '\n');
+	} while (c != '\n' && c != EOF);
 	// input will include \n char on end
 
 	// DEBUG
