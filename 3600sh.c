@@ -37,10 +37,18 @@ int main(int argc, char*argv[]) {
 			ret = do_parse_input(input, &args, &backgroundProc);
 			if (ret == 1) {
 				printf("%s\n", "ERROR");
+				
 			} else if (ret == 2) {
 				printf("%s\n", "Error: Unrecognized escape sequence.");
 			} else if (ret == 3) {
 				printf("%s\n", "Error: Invalid syntax.");
+			}
+			if (ret) {
+				if (eof) {
+					break;
+				} else {
+					continue;
+				}
 			}
 			free(input);
 
