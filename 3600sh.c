@@ -23,18 +23,18 @@ int main(int argc, char*argv[]) {
 	while (1) {         
 		// Issuing prompt
 		char *input = "";
-		int ret = do_prompt(&input);  
-	
-		if (ret) {
+		int eof = 0;
+		int ret = do_prompt(&input, &eof);  
+		if (ret == 1) {
 			return 1;
-		}
-		else {
+		} else if (ret == 2) {
+			break;
+		} else {
 			char **args;
 
 			int backgroundProc = 0;
-			int eofExit = 0;
 
-			ret = do_parse_input(input, &args, &backgroundProc, &eofExit);
+			ret = do_parse_input(input, &args, &backgroundProc);
 			if (ret == 1) {
 				printf("%s\n", "ERROR");
 			} else if (ret == 2) {
@@ -62,10 +62,8 @@ int main(int argc, char*argv[]) {
 				
 				//free(path);
 				free_args(args);
-
-				if (eofExit) {
-					free_args(args);
-					break;	
+				if (eof) {
+					break;
 				}
 			}
 		}
@@ -81,7 +79,7 @@ int main(int argc, char*argv[]) {
 
 // Function which prompts the user for input
 //
-int do_prompt(char **input) {
+int do_prompt(char **input, int *eof) {
 	// Return code variable
 	int ret;
 
@@ -126,10 +124,28 @@ int do_prompt(char **input) {
 	do {
 		c = getc(stdin);
 		if (strlen(*input) == 0) { // if this is the first char of input
+			if (c == EOF) {
+				// If first
+				*eof = 1;
+				printf("\n");
+				return 2;
+			}
 			*input = (char *) calloc(2, sizeof(char)); // allocate space for input string
 			(*input)[0] = (char) c; // write char and null terminator to input string
 			(*input)[1] = '\0';
 		} else { // otherwise we have previously allocated memory
+			if (c == EOF) {
+				// If not first
+				*eof = 1;
+				temp = *input;
+				*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
+				strcpy(*input, temp); // copy back over input string
+				(*input)[strlen(temp)] = '\n'; // add newly read char
+				(*input)[strlen(temp) + 1] = '\0'; // add null terminator
+				free(temp);
+				printf("\n");
+				break;
+			}
 			temp = *input;
 			*input = (char *) calloc(strlen(temp) + 2, sizeof(char)); // add more space to input
 			strcpy(*input, temp); // copy back over input string
@@ -152,7 +168,7 @@ int do_prompt(char **input) {
 // 	1 - Generic Error
 //	2 - Escape Sequence Error 
 // 	3 - & Syntax Error
-int do_parse_input(char *input, char ***args, int *background, int *eofExit) {
+int do_parse_input(char *input, char ***args, int *background) {
 	// Compiling regular expression
 	regex_t r;
 	char * regex_text = "[ \t]*[^ \t\n]+[ \t\n]+"; //[-A-Za-z0-7_&/\\]
@@ -170,7 +186,6 @@ int do_parse_input(char *input, char ***args, int *background, int *eofExit) {
 	(*args)[0] = (char *) NULL;
 	// Setting background to no
 	*background = 0;
-	*eofExit = 0;
 
 	// Cursor pointer
 	char * pointer = input;
@@ -194,7 +209,7 @@ int do_parse_input(char *input, char ***args, int *background, int *eofExit) {
 		combineWithPrev = 0;
 
 		for (i = 0; match[0].rm_so + i < match[0].rm_eo; i++) {
-			if (*background)
+			if (*background && (*(pointer + match[0].rm_so + i)) != '\n' && (*(pointer + match[0].rm_so + i)) != ' ' && (*(pointer + match[0].rm_so + i)) != '\t')
 				return 3;
 
 			int length = 0;
@@ -246,8 +261,7 @@ int do_parse_input(char *input, char ***args, int *background, int *eofExit) {
 					break;
 				case ' ':
 					break;
-				case EOF:
-					*eofExit = 1;
+				case '\t':
 					break;
 				default:
 					matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
@@ -323,6 +337,8 @@ int do_exec(char **argl, int backgroundProc) {
 		//parent_pid = getppid();
 		//strcat(path, argl[0]);
 		//debug_print_args(argl);
+		// Open foo.txt get fd
+		// Dup 2 to get stuff
 		execvp(*argl, argl); // exec user program
 		perror("Error: execv() Failure\n"); // will not get to error if successful
 		//kill((pid_t)cur_pid, SIGQUIT);
