@@ -58,6 +58,7 @@ int main(int argc, char*argv[]) {
 			} else {
 				//char * path = calloc(50, sizeof(char));
 				//strcpy(path, "");
+
 				do_exec(args, backgroundProc);
 				
 				//free(path);
@@ -312,6 +313,14 @@ int do_exec(char **argl, int backgroundProc) {
 	//int cur_pid = getpid(); // get current pid
 	//int parent_pid = getppid();
 	int child_pid;
+        int ret;
+
+        char * arg;
+        unsigned int i = 0;
+        unsigned int j = 0;
+        arg = argl[i];
+        char ** temp;
+
 
 	// fork child process
 	if ((child_pid = fork()) < 0) { // if child process fails to fork
@@ -319,12 +328,65 @@ int do_exec(char **argl, int backgroundProc) {
 		return 1;
 	}
 	if (child_pid == 0) { // fork() == 0 for child process
+                // process arguments for redirections
+                while (arg != NULL) { 
+                  if (!strcmp(arg, "<")) { // if we need to redirect stdin
+                    int f = open(argl[i+1], O_RDWR);
+                    //int old = dup(0);
+                    dup2(f, 0);
+                    temp = (char **) calloc((sizeof(argl)/sizeof(argl[0]))-2, sizeof(argl[0]));
+                    j = 0;
+                    while (argl[j] != NULL) {
+                      if (j != i && j != i+1) {
+                        if (j < i)
+                          temp[j] = argl[i];
+                        else if (j > i)
+                          temp[j-2] = argl[i];
+                      }
+                    }
+                    free_args(argl);
+                    argl = (char **) calloc(1, sizeof(temp));
+                    for (j = 0; j < (sizeof(temp)/sizeof(temp[0])); j++) {
+                      argl[j] = temp [j];
+                    }
+                    free_args(temp);
+                    close(f);
+                    //dup2(0, old);
+                    //for (j = 0; argl[j] != NULL; j++) {
+                    //    free(argl[j]);
+                    //}
+                    //free(argl[j]);
+                    //free(argl);
+                  }
+                  else if (!strcmp(arg, ">")) { // if we need to redirect stdout
+                    //int f = open(arl[i+1]);
+                    //int old = dup(1);
+                    //dup2(f, 1);
+                  } 
+                  else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
+                    //int f = open(arl[i+1]);
+                    //int old = dup(1);
+                    //dup2(f, 2);
+                  }
+
+                  // STILL NEED TO ADD REMOVAL OF ARGS AND FIXING OF LIST TO ABOVE
+                  // BASICALLY GET RID OF > and NEXT ARG IN ARGL AND THEN KEEP GOING
+                }
 		//cur_pid = getpid();
 		//parent_pid = getppid();
 		//strcat(path, argl[0]);
 		//debug_print_args(argl);
-		execvp(*argl, argl); // exec user program
-		perror("Error: execv() Failure\n"); // will not get to error if successful
+		ret = execvp(*argl, argl); // exec user program
+		if (ret == ENOENT) {
+                  printf("Error: Command not found. Maybe.\n");
+                }
+                else if (ret == EPERM) {
+                  printf("Error: Permission denied.\n");
+                }
+                else {
+                  printf("Error: %d\n", ret);
+                }
+                //perror("Error: execv() Failure\n"); // will not get to error if successful
 		//kill((pid_t)cur_pid, SIGQUIT);
 		exit(errno);
 		//return errno;
