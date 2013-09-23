@@ -343,9 +343,11 @@ int do_exec(char **argl, int backgroundProc) {
 	unsigned int i = 0;
 	unsigned int j = 0;
 	arg = argl[i];
-	char ** temp;
         unsigned int len = 0;
         //int redir = 0;
+        int old_i = dup(STDIN_FILENO);
+        int old_o = dup(STDOUT_FILENO);
+        int old_e = dup(STDERR_FILENO);
 
         while (argl[len] != NULL) {
           len++;
@@ -355,122 +357,53 @@ int do_exec(char **argl, int backgroundProc) {
         while (arg != NULL) { 
                 if (!strcmp(arg, "<")) { // if we need to redirect stdin
                         int f = open(argl[i+1], O_RDONLY);
-                        //int old = dup(0);
+                        if (f == -1) {
+                          printf("Error: Unable to open redirection file.\n");
+                          return 1;
+                        }
                         dup2(f, STDIN_FILENO);
-                        temp = (char **) calloc(len-2, sizeof(argl[0]));
-                        j = 0;
-                        while (argl[j] != NULL) {
-                          if (j != i && j != i+1) {
-                            if (j < i) {
-                                temp[j] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j], argl[j]);
-                            }
-                            else if (j > i) {
-                                temp[j-2] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j-2], argl[j]);
-                            }
-                          }
+                        j = i;
+                        free(argl[i]);
+                        free(argl[i+1]);
+                        while (j < len - 2) { 
+                          argl[j] = argl[j+2];
                           j++;
                         }
-                        free_args(argl);
-                        argl = (char **) calloc(1, sizeof(temp));
-                        for (j = 0; j < len-2; j++) {
-                                argl[j] = calloc(strlen(temp[j])+1, sizeof(char));
-                                if (temp[j] == NULL) {
-                                  argl[j] = NULL;
-                                }
-                                else {
-                                  strcpy(argl[j], temp[j]);
-                                }
-                        }
-                        free_args(temp);
-                        //close(f);
-                        //dup2(0, old);
-                        //for (j = 0; argl[j] != NULL; j++) {
-                        //    free(argl[j]);
-                        //}
-                        //free(argl[j]);
-                        //free(argl);
                 }
                 else if (!strcmp(arg, ">")) { // if we need to redirect stdout
-                        //int f = open(arl[i+1]);
-                        //int old = dup(1);
-                        //dup2(f, 1);
                         int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
                         if (f == -1) {
-                          perror("Error");
+                          printf("Error: Unable to open redirection file.\n");
+                          return 1;
                         }
-                        //int old = dup(0);
                         dup2(f, STDOUT_FILENO);
-                        temp = (char **) calloc(len-2, sizeof(argl[0]));
-                        j = 0;
-                        while (argl[j] != NULL) {
-                          if (j != i && j != i+1) {
-                            if (j < i) {
-                                temp[j] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j], argl[j]);
-                            }
-                            else if (j > i) {
-                                temp[j-2] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j-2], argl[j]);
-                            }
-                          }
+                        j = i;
+                        free(argl[i]);
+                        free(argl[i+1]);
+                        while (j < len - 2) { 
+                          argl[j] = argl[j+2];
                           j++;
                         }
-                        free_args(argl);
-                        argl = (char **) calloc(1, sizeof(temp));
-                        for (j = 0; j < len-2; j++) {
-                                if (temp[j] == NULL) {
-                                  argl[j] = NULL;
-                                }
-                                else {
-                                  argl[j] = calloc(strlen(temp[j])+1, sizeof(char));
-                                  strcpy(argl[j], temp[j]);
-                                }
-                        }
-                        free_args(temp);
                 } 
                 else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
-                        //int f = open(arl[i+1]);
-                        //int old = dup(1);
-                        //dup2(f, 2);
-                        int f = open(argl[i+1], O_RDWR|O_CREAT);
-                        //int old = dup(0);
+                        int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
+                        if (f == -1) {
+                          printf("Error: Unable to open redirection file.\n");
+                          return 1;
+                        }
                         dup2(f, STDERR_FILENO);
-                        temp = (char **) calloc(len-2, sizeof(argl[0]));
-                        j = 0;
-                        while (argl[j] != NULL) {
-                          if (j != i && j != i+1) {
-                            if (j < i) {
-                                temp[j] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j], argl[j]);
-                            }
-                            else if (j > i) {
-                                temp[j-2] = (char*) calloc(strlen(argl[j])+1, sizeof(char));
-                                strcpy(temp[j-2], argl[j]);
-                            }
-                          }
+                        j = i;
+                        free(argl[i]);
+                        free(argl[i+1]);
+                        while (j < len - 2) { 
+                          argl[j] = argl[j+2];
                           j++;
                         }
-                        free_args(argl);
-                        argl = (char **) calloc(1, sizeof(temp));
-                        for (j = 0; j < len-2; j++) {
-                                argl[j] = calloc(strlen(temp[j])+1, sizeof(char));
-                                if (temp[j] == NULL) {
-                                  argl[j] = NULL;
-                                }
-                                else {
-                                  strcpy(argl[j], temp[j]);
-                                }
-                        }
-                        free_args(temp);
                 }
+                if (argl[i] == NULL)
+                  break;
                 i++;
                 arg = argl[i];
-
-
-                          // STILL NEED TO ADD REMOVAL OF ARGS AND FIXING OF LIST TO ABOVE
-                          // BASICALLY GET RID OF > and NEXT ARG IN ARGL AND THEN KEEP GOING
         }
 
 	// fork child process
@@ -485,6 +418,9 @@ int do_exec(char **argl, int backgroundProc) {
 		//strcat(path, argl[0]);
 		//debug_print_args(argl);
 		ret = execvp(*argl, argl); // exec user program
+                dup2(old_i, STDIN_FILENO);
+                dup2(old_o, STDOUT_FILENO);
+                dup2(old_e, STDERR_FILENO);
 		if (ret == -1) {
 			printf("Error: Command not found.\n");
 		}
@@ -507,7 +443,10 @@ int do_exec(char **argl, int backgroundProc) {
 	else { // parent process
 		if (!backgroundProc) {
 			wait(NULL); // wait for child process to exit
-		}
+                        }
+                dup2(old_i, STDIN_FILENO);
+                dup2(old_o, STDOUT_FILENO);
+                dup2(old_e, STDERR_FILENO);
 	}
 
 	return 0;
