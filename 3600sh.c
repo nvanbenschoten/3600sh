@@ -32,8 +32,9 @@ int main(int argc, char*argv[]) {
 			char **args;
 
 			int backgroundProc = 0;
+			int eofExit = 0;
 
-			ret = do_parse_input(input, &args, &backgroundProc);
+			ret = do_parse_input(input, &args, &backgroundProc, &eofExit);
 			if (ret == 1) {
 				printf("%s\n", "ERROR");
 			} else if (ret == 2) {
@@ -61,6 +62,11 @@ int main(int argc, char*argv[]) {
 				
 				//free(path);
 				free_args(args);
+
+				if (eofExit) {
+					free_args(args);
+					break;	
+				}
 			}
 		}
 
@@ -146,7 +152,7 @@ int do_prompt(char **input) {
 // 	1 - Generic Error
 //	2 - Escape Sequence Error 
 // 	3 - & Syntax Error
-int do_parse_input(char *input, char ***args, int *background) {
+int do_parse_input(char *input, char ***args, int *background, int *eofExit) {
 	// Compiling regular expression
 	regex_t r;
 	char * regex_text = "[ \t]*[^ \t\n]+[ \t\n]+"; //[-A-Za-z0-7_&/\\]
@@ -164,6 +170,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 	(*args)[0] = (char *) NULL;
 	// Setting background to no
 	*background = 0;
+	*eofExit = 0;
 
 	// Cursor pointer
 	char * pointer = input;
@@ -238,6 +245,9 @@ int do_parse_input(char *input, char ***args, int *background) {
 					*background = 1;
 					break;
 				case ' ':
+					break;
+				case EOF:
+					*eofExit = 1;
 					break;
 				default:
 					matchString[length] = *(pointer + match[0].rm_so + i); // add newly read char
