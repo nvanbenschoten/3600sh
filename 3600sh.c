@@ -372,7 +372,7 @@ int do_exec(char **argl, int backgroundProc) {
                         i--;
                 }
                 else if (!strcmp(arg, ">")) { // if we need to redirect stdout
-                        int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
+                        int f = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
                         if (f == -1) {
                           printf("Error: Unable to open redirection file.\n");
                           return 1;
@@ -388,7 +388,7 @@ int do_exec(char **argl, int backgroundProc) {
                         i--;
                 } 
                 else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
-                        int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
+                        int f = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
                         if (f == -1) {
                           printf("Error: Unable to open redirection file.\n");
                           return 1;
