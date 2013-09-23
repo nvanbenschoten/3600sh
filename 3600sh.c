@@ -92,7 +92,7 @@ int do_prompt(char **input, int *eof) {
 	int ret;
 
 	// Getting the username
-	printf("%s", getenv("USER"));
+	printf("%s@", getenv("USER"));
 
 	// Getting the hostname
 	// Max length according to posix = 255 bytes
@@ -106,15 +106,15 @@ int do_prompt(char **input, int *eof) {
 
 	// Getting the current working directory
 	// Max length of path is 4096
-	char *dir = (char *)calloc(256, sizeof(char));
+	char *dir = (char *)calloc(4096, sizeof(char));
 	// Checking for errors
-	if (getcwd(dir, 256) != dir) {	
+	if (getcwd(dir, 4096) != dir) {	
 		return 1;
 	}
-	dir[255] = '\0'; 
+	dir[4095] = '\0'; 
 
 	// Printing prompt with variables given
-	printf("@%s:%s> ", host, dir);
+	printf("%s:%s> ", host, dir);
 	
 	// Free calloced buffers
 	free(host);
@@ -377,7 +377,8 @@ void free_args(char **args) {
 	int i;
 	for (i = 0; args[i] != NULL; i++) {
 		free(args[i]);
-	}    
+	}  
+	free(args[i]);  
 	free(args);
 }
 
