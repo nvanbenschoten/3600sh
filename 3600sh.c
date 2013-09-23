@@ -369,6 +369,7 @@ int do_exec(char **argl, int backgroundProc) {
                           argl[j] = argl[j+2];
                           j++;
                         }
+                        i--;
                 }
                 else if (!strcmp(arg, ">")) { // if we need to redirect stdout
                         int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
@@ -384,6 +385,7 @@ int do_exec(char **argl, int backgroundProc) {
                           argl[j] = argl[j+2];
                           j++;
                         }
+                        i--;
                 } 
                 else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
                         int f = open(argl[i+1], O_RDWR|O_CREAT, 0777);
@@ -399,9 +401,8 @@ int do_exec(char **argl, int backgroundProc) {
                           argl[j] = argl[j+2];
                           j++;
                         }
+                        i--;
                 }
-                if (argl[i] == NULL)
-                  break;
                 i++;
                 arg = argl[i];
         }
