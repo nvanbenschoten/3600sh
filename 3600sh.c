@@ -53,6 +53,7 @@ int main(int argc, char*argv[]) {
 		}
 
 		if (!strcmp(args[0], "exit")) {
+			// Exit
 			free_args(args);
 			break;	
 		} else {
@@ -76,6 +77,7 @@ int main(int argc, char*argv[]) {
 
 // Function which prompts the user for input
 // Return codes:
+//	 0 - Good
 //   1 - Program failure, exit immediately
 //   2 - Program exit after printing exit
 int do_prompt(char **input, int *eof) {
@@ -198,9 +200,9 @@ int do_prompt(char **input, int *eof) {
 
 // Function which parses the user input from a string to usable data
 // Return Codes:
-//	0 - Good
-// 	1 - Exit error
-//	2 - Reprompt error
+//	 0 - Good
+//	 1 - Exit error
+//	 2 - Reprompt error
 int do_parse_input(char *input, char ***args, int *background) {
 	// Compiling regular expression
 	regex_t r;
