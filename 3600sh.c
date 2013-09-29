@@ -593,6 +593,15 @@ int do_exec(char **argl, int backgroundProc) {
 
 		// Close files
 		// TODO
+                if (fd_i != STDIN_FILENO) {
+                        close(fd_i);
+                }
+                if (fd_o != STDOUT_FILENO) {
+                        close(fd_o);
+                }
+                if (fd_e != STDERR_FILENO) {
+                        close(fd_e);
+                }
 	}
 
 	return 0;
