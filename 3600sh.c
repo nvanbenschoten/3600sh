@@ -423,6 +423,7 @@ int do_exec(char **argl, int backgroundProc) {
 	//int parent_pid = getppid();
 	int child_pid;
 	int ret;
+        //int err = 0;
 
 	char * arg;
 	unsigned int i = 0;
@@ -433,6 +434,9 @@ int do_exec(char **argl, int backgroundProc) {
         int old_i = dup(STDIN_FILENO);
         int old_o = dup(STDOUT_FILENO);
         int old_e = dup(STDERR_FILENO);
+        int fd_i = STDIN_FILENO;
+        int fd_o = STDOUT_FILENO;
+        int fd_e = STDERR_FILENO;
 
         while (argl[len] != NULL) {
           len++;
@@ -441,12 +445,26 @@ int do_exec(char **argl, int backgroundProc) {
 
         while (arg != NULL) { 
                 if (!strcmp(arg, "<")) { // if we need to redirect stdin
-                        int f = open(argl[i+1], O_RDONLY);
-                        if (f == -1) {
+                        // if there is invalid redirection syntax
+                        if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
+                            || !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+                            || !strcmp(argl[i+1], "&")) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        // else if there is more invalid redirection syntax
+                        else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
+                                 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+                                 || !strcmp(argl[i+2], "&") )) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        fd_i = open(argl[i+1], O_RDONLY, 0777);
+                        if (fd_i == -1) {
                           printf("Error: Unable to open redirection file.\n");
                           return 1;
                         }
-                        dup2(f, STDIN_FILENO);
+                        dup2(fd_i, STDIN_FILENO);
                         j = i;
                         free(argl[i]);
                         free(argl[i+1]);
@@ -455,14 +473,29 @@ int do_exec(char **argl, int backgroundProc) {
                           j++;
                         }
                         i--;
+                        len = len - 2;
                 }
                 else if (!strcmp(arg, ">")) { // if we need to redirect stdout
-                        int f = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
-                        if (f == -1) {
+                        // if there is invalid redirection syntax
+                        if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
+                            || !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+                            || !strcmp(argl[i+1], "&")) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        // else if there is more invalid redirection syntax
+                        else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
+                                 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+                                 || !strcmp(argl[i+2], "&") )) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        fd_o = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
+                        if (fd_o == -1) {
                           printf("Error: Unable to open redirection file.\n");
                           return 1;
                         }
-                        dup2(f, STDOUT_FILENO);
+                        dup2(fd_o, STDOUT_FILENO);
                         j = i;
                         free(argl[i]);
                         free(argl[i+1]);
@@ -471,14 +504,29 @@ int do_exec(char **argl, int backgroundProc) {
                           j++;
                         }
                         i--;
+                        len = len - 2;
                 } 
                 else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
-                        int f = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
-                        if (f == -1) {
+                        // if there is invalid redirection syntax
+                        if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
+                            || !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+                            || !strcmp(argl[i+1], "&")) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        // else if there is more invalid redirection syntax
+                        else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
+                                 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+                                 || !strcmp(argl[i+2], "&") )) {
+                            printf("Error: Invalid syntax.\n");
+                            return 1;
+                        }
+                        fd_e = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777);
+                        if (fd_e == -1) {
                           printf("Error: Unable to open redirection file.\n");
                           return 1;
                         }
-                        dup2(f, STDERR_FILENO);
+                        dup2(fd_e, STDERR_FILENO);
                         j = i;
                         free(argl[i]);
                         free(argl[i+1]);
@@ -487,6 +535,7 @@ int do_exec(char **argl, int backgroundProc) {
                           j++;
                         }
                         i--;
+                        len = len - 2;
                 }
                 i++;
                 arg = argl[i];
@@ -507,11 +556,12 @@ int do_exec(char **argl, int backgroundProc) {
                 dup2(old_i, STDIN_FILENO);
                 dup2(old_o, STDOUT_FILENO);
                 dup2(old_e, STDERR_FILENO);
-		if (ret == -1) {
-			printf("Error: Command not found.\n");
-		}
-		else if (ret == EPERM) {
+                //printf("Return code: %d\nError #:%d\n", ret, errno);
+		if (errno == EPERM || errno == EACCES) {
 			printf("Error: Permission denied.\n");
+		}
+		else if (ret == -1) {
+			printf("Error: Command not found.\n");
 		}
 		else {
 			printf("Error: %d\n", ret);
