@@ -59,10 +59,7 @@ int main(int argc, char*argv[]) {
 			break;	
 		} else {
 			// Cals do_exec
-			ret = do_exec(args, backgroundProc);
-			if (ret) {
-				return 1;
-			}
+			do_exec(args, backgroundProc);
 			
 			free_args(args);
 			if (eof) {
@@ -424,7 +421,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 // Function which calls exec
 // Return Codes:
 //	 0 - Good
-//	 1 - Exit error
+//	 1 - Reprompt error
 int do_exec(char **argl, int backgroundProc) {
 	int child_pid;
 	int ret;
