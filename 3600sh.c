@@ -39,13 +39,14 @@ int main(int argc, char*argv[]) {
 		if (ret == 1) {
 			return 1;	
 		} else if (ret == 2) {
+			free_args(args);
 			if (eof) {
 				break;
 			} else {
 				continue;
 			}
 		}
-		
+
 		// If no args, continue loop
 		if (args[0] == NULL) {
 			free_args(args);
@@ -222,6 +223,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 	if (args == NULL) {
 		// Checking memory allocation
 		printf("%s\n", "Error: Memory allocation failed.");
+		regfree(&r);
 		return 1;
 	}
 
@@ -258,6 +260,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 			if (*background && (*(pointer + match[0].rm_so + i)) != '\n' && (*(pointer + match[0].rm_so + i)) != ' ' && (*(pointer + match[0].rm_so + i)) != '\t') {
 				// Character after &
 				printf("%s\n", "Error: Invalid syntax.");
+				regfree(&r);
 				return 2;
 			}	
 
@@ -270,6 +273,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 				if (matchString == NULL) {
 					// Checking memory allocation
 					printf("%s\n", "Error: Memory allocation failed.");
+					regfree(&r);
 					return 1;
 				}
 			} else { 
@@ -280,6 +284,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 				if (matchString == NULL) {
 					// Checking memory allocation
 					printf("%s\n", "Error: Memory allocation failed.");
+					regfree(&r);
 					return 1;
 				}
 				// Copy back over input string
@@ -301,6 +306,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 					if (!(match[0].rm_so + i < match[0].rm_eo)) {
 						// End of line, get out of there with error
 						printf("%s\n", "Error: Unrecognized escape sequence.");
+						regfree(&r);
 						return 2;
 					} else {
 						switch (*(pointer + match[0].rm_so + i)) {
@@ -325,6 +331,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 							default:
 								// Anything else, error
 								printf("%s\n", "Error: Unrecognized escape sequence.");
+								regfree(&r);
 								return 2;
 						}
 					} 
@@ -359,6 +366,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 			if ((*args)[argc-2] == NULL) {
 				// Checking memory allocation
 				printf("%s\n", "Error: Memory allocation failed.");
+				regfree(&r);
 				return 1;
 			}
 			strcpy((*args)[argc-2], tempPointer);
@@ -372,6 +380,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 			if (*args == NULL) {
 				// Checking memory allocation
 				printf("%s\n", "Error: Memory allocation failed.");
+				regfree(&r);
 				return 1;
 			}
 			// Copies args back from temp arg array
@@ -394,18 +403,11 @@ int do_parse_input(char *input, char ***args, int *background) {
 	if (*background) {
 		if (strlen((*args)[argc-1]) == 1) {
 			// Delete term if alone
+			// Frees null pointer
+			free((*args)[argc]);
 			argc--;
-			char **tempAmp = *args;
-			*args = (char **) calloc(argc + 1, sizeof(char*)); // move args back to array
-			if (*args == NULL) {
-				// Checking memory allocation
-				printf("%s\n", "Error: Memory allocation failed.");
-				return 1;
-			}
-			int j = 0;
-			for (j = 0; j < argc; j++)
-				(*args)[j] = tempAmp[j];
-			(*args)[j] = (char *) NULL;
+			free((*args)[argc]);
+			(*args)[argc] = (char *) NULL;
 		} else {
 			// Delete last byte if in token
 			(*args)[argc-1][strlen((*args)[argc-1])-1] = '\0';
@@ -450,34 +452,38 @@ int do_exec(char **argl, int backgroundProc) {
 		if (!strcmp(arg, "<")) { // if we need to redirect stdin
 				// if there is invalid redirection syntax
 				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
-					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
-					|| !strcmp(argl[i+1], "&")) {
+						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+						|| !strcmp(argl[i+1], "&")) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				// else if there is more invalid redirection syntax
 				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
-						 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
-						 || !strcmp(argl[i+2], "&") )) {
+						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+						|| !strcmp(argl[i+2], "&") )) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				if (flag_i) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				fd_i = open(argl[i+1], O_RDONLY, 0777); // open the input file
 				if (fd_i == -1) {
-				  printf("Error: Unable to open redirection file.\n");
-				  return 1;
+					dup2(old_o, STDOUT_FILENO);
+					printf("Error: Unable to open redirection file.\n");
+					return 1;
 				}
 				dup2(fd_i, STDIN_FILENO); // set STDIN to input file
 				j = i;
 				free(argl[i]);
 				free(argl[i+1]);
 				while (j < len - 2) { 
-				  argl[j] = argl[j+2]; // modify argument list for further parsing
-				  j++;
+					argl[j] = argl[j+2]; // modify argument list for further parsing
+					j++;
 				}
 				i--; // update vars for modified list
 				len = len - 2;
@@ -486,34 +492,38 @@ int do_exec(char **argl, int backgroundProc) {
 		else if (!strcmp(arg, ">")) { // if we need to redirect stdout
 				// if there is invalid redirection syntax
 				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
-					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
-					|| !strcmp(argl[i+1], "&")) {
+						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+						|| !strcmp(argl[i+1], "&")) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				// else if there is more invalid redirection syntax
 				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
-						 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
-						 || !strcmp(argl[i+2], "&") )) {
+						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+						|| !strcmp(argl[i+2], "&") )) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				if (flag_o) {
+					dup2(old_o, STDOUT_FILENO);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				fd_o = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open output file
 				if (fd_o == -1) {
-				  printf("Error: Unable to open redirection file.\n");
-				  return 1;
+					dup2(old_o, STDOUT_FILENO);
+					printf("Error: Unable to open redirection file.\n");
+					return 1;
 				}
 				dup2(fd_o, STDOUT_FILENO);
 				j = i;
 				free(argl[i]);
 				free(argl[i+1]);
 				while (j < len - 2) { 
-				  argl[j] = argl[j+2]; // modify argument list for further parsing
-				  j++;
+					argl[j] = argl[j+2]; // modify argument list for further parsing
+					j++;
 				}
 				i--; // update vars for modified list
 				len = len - 2;
@@ -522,34 +532,38 @@ int do_exec(char **argl, int backgroundProc) {
 		else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
 				// if there is invalid redirection syntax
 			if (argl[i+1] == NULL || !strcmp(argl[i+1], "<")
-				|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
-				|| !strcmp(argl[i+1], "&")) {
+					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+					|| !strcmp(argl[i+1], "&")) {
+				dup2(old_o, STDOUT_FILENO);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
 			// else if there is more invalid redirection syntax
 			else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
-					 || !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
-					 || !strcmp(argl[i+2], "&") )) {
+					|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+					|| !strcmp(argl[i+2], "&") )) {
+				dup2(old_o, STDOUT_FILENO);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
 			if (flag_e) {
+				dup2(old_o, STDOUT_FILENO);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
 			fd_e = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open error file
 			if (fd_e == -1) {
-			  printf("Error: Unable to open redirection file.\n");
-			  return 1;
+				dup2(old_o, STDOUT_FILENO);
+				printf("Error: Unable to open redirection file.\n");
+				return 1;
 			}
 			dup2(fd_e, STDERR_FILENO);
 			j = i;
 			free(argl[i]);
 			free(argl[i+1]);
 			while (j < len - 2) { 
-			  argl[j] = argl[j+2]; // modify argument list for further parsing
-			  j++;
+				argl[j] = argl[j+2]; // modify argument list for further parsing
+				j++;
 			}
 			i--; // update vars for modified list
 			len = len - 2;
@@ -561,16 +575,17 @@ int do_exec(char **argl, int backgroundProc) {
 
 	// fork child process
 	if ((child_pid = fork()) < 0) { // if child process fails to fork
+		dup2(old_o, STDOUT_FILENO);
 		perror("Error: fork() Failure\n");
 		return 1;
 	}
 	if (child_pid == 0) { // fork() == 0 for the child process
 		// process arguments for redirections
 		ret = execvp(*argl, argl); // exec user program
-				// if execvp does not exit normally
-				dup2(old_i, STDIN_FILENO); // reset file descriptors
-				dup2(old_o, STDOUT_FILENO);
-				dup2(old_e, STDERR_FILENO);
+		// if execvp does not exit normally
+		dup2(old_i, STDIN_FILENO); // reset file descriptors
+		dup2(old_o, STDOUT_FILENO);
+		dup2(old_e, STDERR_FILENO);
 		if (errno == EPERM || errno == EACCES) { // Permission denied
 			printf("Error: Permission denied.\n");
 		}
@@ -592,16 +607,15 @@ int do_exec(char **argl, int backgroundProc) {
 		dup2(old_e, STDERR_FILENO);
 
 		// Close files
-		// TODO
-                if (fd_i != STDIN_FILENO) {
-                        close(fd_i);
-                }
-                if (fd_o != STDOUT_FILENO) {
-                        close(fd_o);
-                }
-                if (fd_e != STDERR_FILENO) {
-                        close(fd_e);
-                }
+		if (fd_i != STDIN_FILENO) {
+			close(fd_i);
+		}
+		if (fd_o != STDOUT_FILENO) {
+			close(fd_o);
+		}
+		if (fd_e != STDERR_FILENO) {
+			close(fd_e);
+		}
 	}
 
 	return 0;
