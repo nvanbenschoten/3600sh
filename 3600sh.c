@@ -454,7 +454,7 @@ int do_exec(char **argl, int backgroundProc) {
 				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
 						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
 						|| !strcmp(argl[i+1], "&")) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
@@ -462,18 +462,18 @@ int do_exec(char **argl, int backgroundProc) {
 				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
 						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
 						|| !strcmp(argl[i+2], "&") )) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				if (flag_i) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				fd_i = open(argl[i+1], O_RDONLY, 0777); // open the input file
 				if (fd_i == -1) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Unable to open redirection file.\n");
 					return 1;
 				}
@@ -494,7 +494,7 @@ int do_exec(char **argl, int backgroundProc) {
 				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
 						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
 						|| !strcmp(argl[i+1], "&")) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
@@ -502,18 +502,18 @@ int do_exec(char **argl, int backgroundProc) {
 				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
 						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
 						|| !strcmp(argl[i+2], "&") )) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				if (flag_o) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Invalid syntax.\n");
 					return 1;
 				}
 				fd_o = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open output file
 				if (fd_o == -1) {
-					dup2(old_o, STDOUT_FILENO);
+					reset_redirection(old_i, old_o, old_e);
 					printf("Error: Unable to open redirection file.\n");
 					return 1;
 				}
@@ -534,7 +534,7 @@ int do_exec(char **argl, int backgroundProc) {
 			if (argl[i+1] == NULL || !strcmp(argl[i+1], "<")
 					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
 					|| !strcmp(argl[i+1], "&")) {
-				dup2(old_o, STDOUT_FILENO);
+				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
@@ -542,18 +542,18 @@ int do_exec(char **argl, int backgroundProc) {
 			else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
 					|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
 					|| !strcmp(argl[i+2], "&") )) {
-				dup2(old_o, STDOUT_FILENO);
+				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
 			if (flag_e) {
-				dup2(old_o, STDOUT_FILENO);
+				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
 			}
 			fd_e = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open error file
 			if (fd_e == -1) {
-				dup2(old_o, STDOUT_FILENO);
+				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Unable to open redirection file.\n");
 				return 1;
 			}
@@ -575,7 +575,7 @@ int do_exec(char **argl, int backgroundProc) {
 
 	// fork child process
 	if ((child_pid = fork()) < 0) { // if child process fails to fork
-		dup2(old_o, STDOUT_FILENO);
+		reset_redirection(old_i, old_o, old_e);
 		perror("Error: fork() Failure\n");
 		return 1;
 	}
@@ -583,9 +583,8 @@ int do_exec(char **argl, int backgroundProc) {
 		// process arguments for redirections
 		ret = execvp(*argl, argl); // exec user program
 		// if execvp does not exit normally
-		dup2(old_i, STDIN_FILENO); // reset file descriptors
-		dup2(old_o, STDOUT_FILENO);
-		dup2(old_e, STDERR_FILENO);
+		// Resete file descriptors
+		reset_redirection(old_i, old_o, old_e);
 		if (errno == EPERM || errno == EACCES) { // Permission denied
 			printf("Error: Permission denied.\n");
 		}
@@ -602,9 +601,7 @@ int do_exec(char **argl, int backgroundProc) {
 			wait(NULL); // wait for child process to exit
 		}
 		// reset our file descriptors
-		dup2(old_i, STDIN_FILENO);
-		dup2(old_o, STDOUT_FILENO);
-		dup2(old_e, STDERR_FILENO);
+		reset_redirection(old_i, old_o, old_e);
 
 		// Close files
 		if (fd_i != STDIN_FILENO) {
@@ -640,6 +637,13 @@ void free_args(char **args) {
 	free(args[i]);  
 	// Frees args array pointer
 	free(args);
+}
+
+void reset_redirection(int old_i, int old_o, int old_e) {
+	// reset our file descriptors
+	dup2(old_i, STDIN_FILENO);
+	dup2(old_o, STDOUT_FILENO);
+	dup2(old_e, STDERR_FILENO);
 }
 
 void debug_print_args(char **args) {

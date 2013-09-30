@@ -31,6 +31,7 @@ int do_parse_input(char *input, char ***args, int *background);
 int do_exec(char **argl, int background);
 
 void free_args(char **args);
+void reset_redirection(int old_i, int old_o, int old_e);
 
 void debug_print_args(char **args);
 
