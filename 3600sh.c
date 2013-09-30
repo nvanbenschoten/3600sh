@@ -59,7 +59,10 @@ int main(int argc, char*argv[]) {
 			break;	
 		} else {
 			// Cals do_exec
-			do_exec(args, backgroundProc);
+			ret = do_exec(args, backgroundProc);
+			if (ret) {
+				return 1;
+			}
 			
 			free_args(args);
 			if (eof) {
@@ -419,7 +422,9 @@ int do_parse_input(char *input, char ***args, int *background) {
 
 
 // Function which calls exec
-//
+// Return Codes:
+//	 0 - Good
+//	 1 - Exit error
 int do_exec(char **argl, int backgroundProc) {
 	int child_pid;
 	int ret;
@@ -450,84 +455,84 @@ int do_exec(char **argl, int backgroundProc) {
 
 	while (arg != NULL) { // while there are more arguments to parse
 		if (!strcmp(arg, "<")) { // if we need to redirect stdin
-				// if there is invalid redirection syntax
-				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
-						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
-						|| !strcmp(argl[i+1], "&")) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				// else if there is more invalid redirection syntax
-				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
-						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
-						|| !strcmp(argl[i+2], "&") )) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				if (flag_i) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				fd_i = open(argl[i+1], O_RDONLY, 0777); // open the input file
-				if (fd_i == -1) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Unable to open redirection file.\n");
-					return 1;
-				}
-				dup2(fd_i, STDIN_FILENO); // set STDIN to input file
-				j = i;
-				free(argl[i]);
-				free(argl[i+1]);
-				while (j < len - 2) { 
-					argl[j] = argl[j+2]; // modify argument list for further parsing
-					j++;
-				}
-				i--; // update vars for modified list
-				len = len - 2;
-				flag_i++;
+			// if there is invalid redirection syntax
+			if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
+					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+					|| !strcmp(argl[i+1], "&")) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			// else if there is more invalid redirection syntax
+			else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
+					|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+					|| !strcmp(argl[i+2], "&") )) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			if (flag_i) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			fd_i = open(argl[i+1], O_RDONLY, 0777); // open the input file
+			if (fd_i == -1) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Unable to open redirection file.\n");
+				return 1;
+			}
+			dup2(fd_i, STDIN_FILENO); // set STDIN to input file
+			j = i;
+			free(argl[i]);
+			free(argl[i+1]);
+			while (j < len - 2) { 
+				argl[j] = argl[j+2]; // modify argument list for further parsing
+				j++;
+			}
+			i--; // update vars for modified list
+			len = len - 2;
+			flag_i++;
 		}
 		else if (!strcmp(arg, ">")) { // if we need to redirect stdout
-				// if there is invalid redirection syntax
-				if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
-						|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
-						|| !strcmp(argl[i+1], "&")) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				// else if there is more invalid redirection syntax
-				else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
-						|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
-						|| !strcmp(argl[i+2], "&") )) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				if (flag_o) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Invalid syntax.\n");
-					return 1;
-				}
-				fd_o = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open output file
-				if (fd_o == -1) {
-					reset_redirection(old_i, old_o, old_e);
-					printf("Error: Unable to open redirection file.\n");
-					return 1;
-				}
-				dup2(fd_o, STDOUT_FILENO);
-				j = i;
-				free(argl[i]);
-				free(argl[i+1]);
-				while (j < len - 2) { 
-					argl[j] = argl[j+2]; // modify argument list for further parsing
-					j++;
-				}
-				i--; // update vars for modified list
-				len = len - 2;
-				flag_o++;
+			// if there is invalid redirection syntax
+			if (argl[i+1] == NULL || !strcmp(argl[i+1], "<") 
+					|| !strcmp(argl[i+1], ">") || !strcmp(argl[i+1], "2>")
+					|| !strcmp(argl[i+1], "&")) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			// else if there is more invalid redirection syntax
+			else if (len - i > 3 && !(!strcmp(argl[i+2], "<")
+					|| !strcmp(argl[i+2], ">") || !strcmp(argl[i+2], "2>")
+					|| !strcmp(argl[i+2], "&") )) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			if (flag_o) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Invalid syntax.\n");
+				return 1;
+			}
+			fd_o = open(argl[i+1], O_RDWR|O_CREAT|O_TRUNC, 0777); // open output file
+			if (fd_o == -1) {
+				reset_redirection(old_i, old_o, old_e);
+				printf("Error: Unable to open redirection file.\n");
+				return 1;
+			}
+			dup2(fd_o, STDOUT_FILENO);
+			j = i;
+			free(argl[i]);
+			free(argl[i+1]);
+			while (j < len - 2) { 
+				argl[j] = argl[j+2]; // modify argument list for further parsing
+				j++;
+			}
+			i--; // update vars for modified list
+			len = len - 2;
+			flag_o++;
 		} 
 		else if (!strcmp(arg, "2>")) { // if we need to redirect stderr
 				// if there is invalid redirection syntax
@@ -639,6 +644,8 @@ void free_args(char **args) {
 	free(args);
 }
 
+// Resets file descriptors for stdin, stdout, & stderr with previous values
+//
 void reset_redirection(int old_i, int old_o, int old_e) {
 	// reset our file descriptors
 	dup2(old_i, STDIN_FILENO);
@@ -646,6 +653,8 @@ void reset_redirection(int old_i, int old_o, int old_e) {
 	dup2(old_e, STDERR_FILENO);
 }
 
+// Prints the list of arguments in a readable way
+//
 void debug_print_args(char **args) {
 	// Prints args with quotes around them
 	int i = 0;
