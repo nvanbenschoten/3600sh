@@ -670,7 +670,8 @@ int do_exec(char **argl, int backgroundProc, pid_t **pids) {
 //
 void do_exit() {
 	printf("So long and thanks for all the fish!\n");
-	exit(0);
+	// No longer want to exit because need to wait for other processes to end
+	//exit(0);
 }
 
 // Frees argument string pointer array
