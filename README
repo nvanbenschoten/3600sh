@@ -1,0 +1,74 @@
+  ____    __   ___   ___      _     
+ |___ \  / /  / _ \ / _ \    | |    
+   __) |/ /_ | | | | | | |___| |__  
+  |__ <| '_ \| | | | | | / __| '_ \ 
+  ___) | (_) | |_| | |_| \__ \ | | |
+ |____/ \___/ \___/ \___/|___/_| |_|
+
+Nathaniel Dempkowski and Nathan Vanbenschoten
+
+----------------------
+ High Level Approach
+----------------------
+
+In the design of our shell, we split the major pieces of functionality into a series of helper functions that work together. This allowed us to use return codes from the functions for error checking. These functions are as follows: do_prompt, do_parse_input, do_exec, and do_exit.
+
+do_prompt prints out a prompt for the user containing their username, hostname, and current working directory. It also collects keyboard input from the user or an input file. We elected to separate the input collection from the parsing as it was easier to verify that the parts were working when they were independent. The greatest challenge we faced when writing do_prompt was getting the username in a way that was compatible with the testing script. We had functions like getlogin() fail unpredictably because the test script redirected stdout. Other than that do_prompt was relatively straightforward, and even complies to POSIX standards like maximum path and hostname length.
+
+do_parse_input takes in an input string, and returns a valid array of arguments that can
+potentially be used with execvp(). This is accomplished first by using a regex string to
+correctly tokenize the input string into a group of strings matching a token's requirement. Further refinements are made to these tokens to allow them to support escape characters, as well as background processes. The biggest challenges faced by our design, based on the properties of the regular expressions that were used, was combining tokens when a backslash space is used and making sure background processes were correctly recognized.  
+
+do_exec handles the execution of user commands along with input, output, and error redirection. It first parses through the list of arguments and looks for valid and invalid redirections and redirects them accordingly. We then fork a child process as necessary and handle errors and backgrounding. To help keep track of file descriptors when errors occur, we wrote a reset_redirection function, which helped eliminate redundant code. The biggest challenges in this function were figuring out the edge cases that would cause redirections to fail, and the logic behind forking processes. Luckily our forking code wasn't too complex, so that wasn't terrible.
+
+do_exit literally just prints out the necessary message and exits the program. 
+
+Along with these we also used two other helper functions throughout the program for functionality that was commonly needed: free_args and reset_redirection. free_args frees our list of arguments which was needed frequently as many parts of the program rely on dynamically allocate a list of arguments.
+
+----------------------
+ Testing
+----------------------
+
+We based our testing on the provided tests, but as our shell was split into different functions it was easy to debug and test those individually as we implemented them to ensure the components of our shell were working as expected. During these tests we heavily used GDB to debug edge cases that we thought of and saw. Throughout development we created many various test inputs for suspected edge cases which helped us polish our codebase. In addition, we created a debug_print_args function for quick on-the-fly debugging of arguments and arrays of strings. We also integrated git into our workflow as it provided a convenient tool for our workflow. In total we had ~60 commits. 
+
+As some of the tests have undefined output due to backgrounding, we wrote scripts to run the tests many times. We estimate that the backgrounding tests each have an individual probability of 1/10 of passing from the following data:
+
+
+                  Testing Results
+           +
+           |
+       896 | ++
+           | ++
+           | ++ 
+times   97 | ++     ++
+per        | ++     ++
+1000       | ++     ++
+         6 | ++     ++     ++
+           | ++     ++     ++
+           | ++     ++     ++
+         1 | ++     ++     ++     ++
+           +--------------------------+
+	     35     36     37     38 
+                # of tests passing
+
+----------------------
+ Functionality
+----------------------
+
+Our shell provides a prompt to the user similar to bash or any other modern shell. The user can then type commands into our shell which work as expected. The only command that doesn't work as expected is cd, but that was not part of our required implementation and is not a true executable command. The commands support an arbitrary amount of whitespace around arguments. Arguments to commands work correctly, and support input, output, and error redirections.
+
+These work as follows:
+
+  Redirecting STDIN:
+    cmd arg1 arg2 ... argN < stdin_file
+
+  Redirecting STDOUT:
+    cmd arg1 arg2 ... argN > stdout_file
+
+  Redirecting STDERR:
+    cmd arg1 arg2 ... argN 2> stderr_file
+
+  Redirections can also be combined in any order, and we support commands like:
+    cmd arg1 arg2 ... argN < stdin_file 2> stderr_file > stdout_file
+
+We also provide meaningful errors to the user when things go wrong, and the shell always reappears due to our usage of return codes from functions for error handling. 
