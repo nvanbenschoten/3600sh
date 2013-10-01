@@ -18,7 +18,17 @@ int main(int argc, char*argv[]) {
 	USE(argc);
 	USE(argv);
 	setvbuf(stdout, NULL, _IONBF, 0); 
-  
+ 
+	// Creating an array of child process ids
+	pid_t *pids;
+	pids = (pid_t *)calloc(1, sizeof(pid_t));
+	if (pids == NULL) {
+		// Checking memory allocation
+		printf("%s\n", "Error: Memory allocation failed.");
+		return 1;
+	}
+	pids[0] = -1;
+ 
 	// Main loop that reads a command and executes it
 	while (1) {         
 		// Issuing prompt
@@ -37,8 +47,10 @@ int main(int argc, char*argv[]) {
 		ret = do_parse_input(input, &args, &backgroundProc);
 		free(input);
 		if (ret == 1) {
+			// Fatal error
 			return 1;	
 		} else if (ret == 2) {
+			// If nonfatal error
 			free_args(args);
 			if (eof) {
 				break;
@@ -59,7 +71,7 @@ int main(int argc, char*argv[]) {
 			break;	
 		} else {
 			// Cals do_exec
-			do_exec(args, backgroundProc);
+			do_exec(args, backgroundProc, &pids);
 			
 			free_args(args);
 			if (eof) {
@@ -72,6 +84,14 @@ int main(int argc, char*argv[]) {
 
   // Exit function
   do_exit();
+
+  // Waits for all background procs before exiting
+  int j = 0;
+  int status = 0;
+  for(j = 0; pids[j] != -1; j++) {
+	waitpid(pids[j], &status, 0);
+  }
+  free(pids);
 
   return 0;
 }
@@ -257,7 +277,9 @@ int do_parse_input(char *input, char ***args, int *background) {
 
 		for (i = 0; match[0].rm_so + i < match[0].rm_eo; i++) {
 			// Iterates through match token
-			if (*background && (*(pointer + match[0].rm_so + i)) != '\n' && (*(pointer + match[0].rm_so + i)) != ' ' && (*(pointer + match[0].rm_so + i)) != '\t') {
+			if (*background && (*(pointer + match[0].rm_so + i)) != '\n' 
+					&& (*(pointer + match[0].rm_so + i)) != ' ' 
+					&& (*(pointer + match[0].rm_so + i)) != '\t') {
 				// Character after &
 				printf("%s\n", "Error: Invalid syntax.");
 				regfree(&r);
@@ -422,7 +444,7 @@ int do_parse_input(char *input, char ***args, int *background) {
 // Return Codes:
 //	 0 - Good
 //	 1 - Reprompt error
-int do_exec(char **argl, int backgroundProc) {
+int do_exec(char **argl, int backgroundProc, pid_t **pids) {
 	int child_pid;
 	int ret;
 	char * arg;
@@ -469,6 +491,7 @@ int do_exec(char **argl, int backgroundProc) {
 				return 1;
 			}
 			if (flag_i) {
+				// If second time redirecting input
 				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
@@ -509,6 +532,7 @@ int do_exec(char **argl, int backgroundProc) {
 				return 1;
 			}
 			if (flag_o) {
+				// If second time redirecting output
 				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
@@ -549,6 +573,7 @@ int do_exec(char **argl, int backgroundProc) {
 				return 1;
 			}
 			if (flag_e) {
+				// If second time redirecting error
 				reset_redirection(old_i, old_o, old_e);
 				printf("Error: Invalid syntax.\n");
 				return 1;
@@ -599,11 +624,32 @@ int do_exec(char **argl, int backgroundProc) {
 		exit(errno); // exit with error code
 	}
 	else { // else we are in the parent process
-		if (!backgroundProc) { // if we are not running the process in the background
-			wait(NULL); // wait for child process to exit
-		}
 		// reset our file descriptors
 		reset_redirection(old_i, old_o, old_e);
+		
+		if (!backgroundProc) { // if we are not running the process in the background
+			wait(NULL); // wait for child process to exit
+		} else {
+			// Add pid to pid list
+			for (i = 0; (*pids)[i] != -1; i++) {
+				// Do nothing
+			}
+			pid_t *temp = *pids;
+			*pids = (pid_t *)calloc(i+2, sizeof(pid_t));
+			if (*pids == NULL) {
+				// Checking memory allocation
+				printf("%s\n", "Error: Memory allocation failed.");
+				return 1;
+			}
+
+			(*pids)[0] = child_pid;
+			for (i = 0; temp[i] != -1; i++) {
+				(*pids)[i+1] = temp[i];
+			}
+			(*pids)[i+1] = -1;
+
+			free(temp);
+		}
 
 		// Close files
 		if (fd_i != STDIN_FILENO) {

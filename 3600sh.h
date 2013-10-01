@@ -28,7 +28,7 @@
 void do_exit();
 int do_prompt(char **input, int *eof);
 int do_parse_input(char *input, char ***args, int *background);
-int do_exec(char **argl, int background);
+int do_exec(char **argl, int background, pid_t **pids);
 
 void free_args(char **args);
 void reset_redirection(int old_i, int old_o, int old_e);
